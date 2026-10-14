@@ -1,4 +1,4 @@
-# Social App
+# Social App (Solice)
 
 A Flutter app for a social media API. You can post photos, like and comment, find people, add friends and chat with them.
 
