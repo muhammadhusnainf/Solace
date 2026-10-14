@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -177,7 +176,14 @@ class ApiClient {
         contentType: DioMediaType.parse(imageMime ?? 'image/jpeg'),
       ),
     });
-    final res = await dio.post('/api/posts', data: form);
+    final res = await dio.post(
+      '/api/posts',
+      data: form,
+      options: Options(
+        sendTimeout: const Duration(minutes: 5),
+        receiveTimeout: const Duration(minutes: 5),
+      ),
+    );
     _check(res, fallback: 'Could not create post');
   }
 

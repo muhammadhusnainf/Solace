@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class AuthField extends StatelessWidget {
+class AuthField extends StatefulWidget {
   const AuthField({
     super.key,
     required this.controller,
@@ -21,18 +21,44 @@ class AuthField extends StatelessWidget {
   final void Function(String)? onFieldSubmitted;
 
   @override
+  State<AuthField> createState() => _AuthFieldState();
+}
+
+class _AuthFieldState extends State<AuthField> {
+  late bool _hidden;
+
+  @override
+  void initState() {
+    super.initState();
+    _hidden = widget.obscureText;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      validator: validator,
-      textInputAction: textInputAction,
-      onFieldSubmitted: onFieldSubmitted,
+      controller: widget.controller,
+      obscureText: _hidden,
+      // keeps the keyboard from caching passwords
+      enableSuggestions: !widget.obscureText,
+      autocorrect: !widget.obscureText,
+      keyboardType: widget.keyboardType,
+      validator: widget.validator,
+      textInputAction: widget.textInputAction,
+      onFieldSubmitted: widget.onFieldSubmitted,
       decoration: InputDecoration(
-        hintText: hint,
+        hintText: widget.hint,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         errorMaxLines: 2,
+        suffixIcon: widget.obscureText
+            ? IconButton(
+                icon: Icon(
+                  _hidden
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                ),
+                onPressed: () => setState(() => _hidden = !_hidden),
+              )
+            : null,
       ),
     );
   }

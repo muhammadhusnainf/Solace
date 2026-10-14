@@ -8,6 +8,7 @@ import '../profile_provider.dart';
 import '../screens/profile_screen.dart';
 import 'comment_sheet.dart';
 import 'post_detail_screen.dart';
+import 'post_media.dart';
 
 class PostCard extends ConsumerWidget {
   const PostCard({super.key, required this.post, this.interactive = false});
@@ -28,14 +29,27 @@ class PostCard extends ConsumerWidget {
         );
     void openAuthor() => openProfile(context, post.userId);
 
-    final hasComments = interactive &&
-        ref.watch(commentsProvider(post.id)).maybeWhen(
-              data: (list) => list.isNotEmpty,
-              orElse: () => false,
+    final commentCount = !interactive
+        ? 0
+        : ref.watch(commentsProvider(post.id)).maybeWhen(
+              data: (list) => list.length,
+              orElse: () => 0,
             );
 
     final hasAvatar = post.authorProfilePicUrl != null &&
         post.authorProfilePicUrl!.isNotEmpty;
+
+    Future<void> toggleLike() async {
+      try {
+        await ref.read(likesProvider.notifier).toggle(post.id, likeCount);
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not update like: $e')),
+          );
+        }
+      }
+    }
 
     final card = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,15 +88,15 @@ class PostCard extends ConsumerWidget {
           ),
         ),
         if (post.imageUrl != null && post.imageUrl!.isNotEmpty)
-          Image.network(
-            post.imageUrl!,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => const SizedBox(
-              height: 120,
-              child: Center(child: Icon(Icons.broken_image_outlined)),
-            ),
-          ),
+          post.isVideo
+              ? PostMedia(post: post)
+              : GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onDoubleTap: () {
+                    if (user != null && !isLiked) toggleLike();
+                  },
+                  child: PostMedia(post: post),
+                ),
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 4),
           child: Row(
@@ -91,22 +105,7 @@ class PostCard extends ConsumerWidget {
                 icon: isLiked
                     ? const Icon(Icons.favorite, color: Colors.red)
                     : const Icon(Icons.favorite_border),
-                onPressed: user == null
-                    ? null
-                    : () async {
-                        try {
-                          await ref
-                              .read(likesProvider.notifier)
-                              .toggle(post.id, likeCount);
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Text('Could not update like: $e')),
-                            );
-                          }
-                        }
-                      },
+                onPressed: user == null ? null : toggleLike,
               ),
               Text('$likeCount ${likeCount == 1 ? 'like' : 'likes'}'),
             ],
@@ -116,13 +115,15 @@ class PostCard extends ConsumerWidget {
           padding: const EdgeInsets.only(left: 14),
           child: Text(post.description),
         ),
-        if (hasComments)
+        if (commentCount > 0)
           InkWell(
             onTap: openPost,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(14, 6, 14, 4),
               child: Text(
-                'View all comments',
+                commentCount == 1
+                    ? 'View 1 comment'
+                    : 'View all $commentCount comments',
                 style: TextStyle(color: Colors.grey.shade600),
               ),
             ),

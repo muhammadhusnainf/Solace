@@ -188,15 +188,34 @@ class _CommentTile extends StatelessWidget {
   const _CommentTile({required this.comment});
   final Comment comment;
 
+  Future<void> _open(BuildContext context) async {
+    if (comment.userId != 0) {
+      openProfile(context, comment.userId);
+      return;
+    }
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final found = await api.search(comment.username);
+      final match = found.users.where((u) => u.username == comment.username);
+      if (match.isNotEmpty && context.mounted) {
+        openProfile(context, match.first.id);
+      }
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Could not open profile')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final hasPic =
         comment.profilePicUrl != null && comment.profilePicUrl!.isNotEmpty;
     return ListTile(
       dense: true,
-      onTap: comment.userId == 0
+      onTap: comment.userId == 0 && comment.username.isEmpty
           ? null
-          : () => openProfile(context, comment.userId),
+          : () => _open(context),
       leading: CircleAvatar(
         radius: 16,
         backgroundImage: hasPic ? NetworkImage(comment.profilePicUrl!) : null,

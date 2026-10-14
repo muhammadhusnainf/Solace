@@ -46,7 +46,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Social App',
+                    'Solace',
                     textAlign: TextAlign.center,
                     style: Theme.of(context)
                         .textTheme

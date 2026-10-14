@@ -7,6 +7,7 @@ import '../profile_provider.dart';
 import '../widgets/change_profile_photo_dialog.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/post_detail_screen.dart';
+import '../widgets/post_media.dart';
 import 'chat_screen.dart';
 
 void openProfile(BuildContext context, int userId) {
@@ -328,6 +329,7 @@ class _PostTile extends StatelessWidget {
       userId: post.userId,
       description: post.description,
       imageUrl: post.imageUrl,
+      resourceType: post.resourceType,
       likes: post.likes,
       authorName: author?.fullName ?? '',
       authorProfilePicUrl: author?.profilePicUrl,
@@ -342,14 +344,7 @@ class _PostTile extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(4),
           child: hasImage
-              ? Image.network(
-                  post.imageUrl!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: scheme.surfaceContainerHighest,
-                    child: const Icon(Icons.broken_image_outlined),
-                  ),
-                )
+              ? PostThumb(post: post)
               : Container(
                   color: scheme.surfaceContainerHighest,
                   padding: const EdgeInsets.all(8),

@@ -80,7 +80,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Social App',
+                      'Solace',
                       textAlign: TextAlign.center,
                       style: Theme.of(context)
                           .textTheme

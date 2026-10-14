@@ -36,6 +36,7 @@ class _CreatePostDialogState extends ConsumerState<CreatePostDialog> {
   Uint8List? _imageBytes;
   String? _imageName;
   String? _imageMime;
+  bool _isVideo = false;
   bool _submitting = false;
   String? _error;
 
@@ -54,15 +55,38 @@ class _CreatePostDialogState extends ConsumerState<CreatePostDialog> {
       _imageBytes = bytes;
       _imageName = file.name;
       _imageMime = file.mimeType ?? _mimeFromName(file.name);
+      _isVideo = false;
       _error = null;
     });
   }
+
+  Future<void> _pickVideo() async {
+    final file = await _picker.pickVideo(source: ImageSource.gallery);
+    if (file == null) return;
+    final bytes = await file.readAsBytes();
+    if (!mounted) return;
+    setState(() {
+      _imageBytes = bytes;
+      _imageName = file.name;
+      _imageMime = file.mimeType ?? _mimeFromName(file.name);
+      _isVideo = true;
+      _error = null;
+    });
+  }
+
+  void _change() => _isVideo ? _pickVideo() : _pickImage();
 
   String _mimeFromName(String name) {
     final n = name.toLowerCase();
     if (n.endsWith('.png')) return 'image/png';
     if (n.endsWith('.gif')) return 'image/gif';
     if (n.endsWith('.webp')) return 'image/webp';
+    if (n.endsWith('.mp4')) return 'video/mp4';
+    if (n.endsWith('.mov')) return 'video/quicktime';
+    if (n.endsWith('.webm')) return 'video/webm';
+    if (n.endsWith('.mkv')) return 'video/x-matroska';
+    if (n.endsWith('.3gp')) return 'video/3gpp';
+    if (n.endsWith('.avi')) return 'video/x-msvideo';
     return 'image/jpeg';
   }
 
@@ -83,7 +107,7 @@ class _CreatePostDialogState extends ConsumerState<CreatePostDialog> {
         userId: user.id,
         description: text,
         imageBytes: _imageBytes!,
-        imageName: _imageName ?? 'image.jpg',
+        imageName: _imageName ?? (_isVideo ? 'video.mp4' : 'image.jpg'),
         imageMime: _imageMime,
       );
       ref.invalidate(feedProvider);
@@ -158,13 +182,19 @@ class _CreatePostDialogState extends ConsumerState<CreatePostDialog> {
           Icon(Icons.photo_library_outlined,
               size: 72, color: scheme.onSurfaceVariant),
           const SizedBox(height: 16),
-          const Text('Select a photo to share',
+          const Text('Select a photo or video to share',
               style: TextStyle(fontSize: 18)),
           const SizedBox(height: 20),
           FilledButton(
             onPressed: _pickImage,
             style: _blueButton,
-            child: const Text('Select from gallery'),
+            child: const Text('Select photo'),
+          ),
+          const SizedBox(height: 10),
+          FilledButton(
+            onPressed: _pickVideo,
+            style: _blueButton,
+            child: const Text('Select video'),
           ),
         ],
       ),
@@ -182,15 +212,17 @@ class _CreatePostDialogState extends ConsumerState<CreatePostDialog> {
               borderRadius: BorderRadius.circular(8),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 300),
-                child: Image.memory(_imageBytes!, fit: BoxFit.cover),
+                child: _isVideo
+                    ? _videoPreview()
+                    : Image.memory(_imageBytes!, fit: BoxFit.cover),
               ),
             ),
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
-                onPressed: _submitting ? null : _pickImage,
+                onPressed: _submitting ? null : _change,
                 style: TextButton.styleFrom(foregroundColor: Colors.blue),
-                child: const Text('Change photo'),
+                child: Text(_isVideo ? 'Change video' : 'Change photo'),
               ),
             ),
           ],
@@ -212,6 +244,12 @@ class _CreatePostDialogState extends ConsumerState<CreatePostDialog> {
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(_error!, style: const TextStyle(color: Colors.red)),
             ),
+          if (_submitting && _isVideo)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Text('Uploading video, this can take a minute',
+                  textAlign: TextAlign.center),
+            ),
           const SizedBox(height: 8),
           FilledButton(
             onPressed: _submitting ? null : _submit,
@@ -223,6 +261,30 @@ class _CreatePostDialogState extends ConsumerState<CreatePostDialog> {
                     child: CircularProgressIndicator(strokeWidth: 2))
                 : const Text('Post'),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _videoPreview() {
+    final mb = (_imageBytes!.lengthInBytes / (1024 * 1024)).toStringAsFixed(1);
+    return Container(
+      height: 200,
+      width: double.infinity,
+      color: Colors.black,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.videocam, color: Colors.white, size: 48),
+          const SizedBox(height: 8),
+          Text(
+            _imageName ?? 'video',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.white),
+          ),
+          Text('$mb MB', style: const TextStyle(color: Colors.white70)),
         ],
       ),
     );

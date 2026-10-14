@@ -5,16 +5,16 @@ import 'screens/login_screen.dart';
 import 'screens/feed_screen.dart';
 
 void main() {
-  runApp(const ProviderScope(child: SocialApp()));
+  runApp(const ProviderScope(child: SolaceApp()));
 }
 
-class SocialApp extends StatelessWidget {
-  const SocialApp({super.key});
+class SolaceApp extends StatelessWidget {
+  const SolaceApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Social App',
+      title: 'Solace',
       theme: ThemeData(colorSchemeSeed: Colors.deepPurple, useMaterial3: true),
       debugShowCheckedModeBanner: false,
       home: const RootRouter(),

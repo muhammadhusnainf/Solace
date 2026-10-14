@@ -6,6 +6,7 @@ import '../api_client.dart';
 import '../auth_provider.dart';
 import '../models.dart';
 import '../sounds.dart';
+import 'profile_screen.dart';
 
 void openChat(BuildContext context, AppUser friend) {
   Navigator.of(context).push(
@@ -138,23 +139,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 16,
-              backgroundImage:
-                  hasPic ? NetworkImage(friend.profilePicUrl!) : null,
-              onBackgroundImageError: hasPic ? (_, __) {} : null,
-              child: hasPic ? null : const Icon(Icons.person, size: 18),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                friend.fullName.isNotEmpty ? friend.fullName : friend.username,
-                overflow: TextOverflow.ellipsis,
+        title: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => openProfile(context, friend.id),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 16,
+                backgroundImage:
+                    hasPic ? NetworkImage(friend.profilePicUrl!) : null,
+                onBackgroundImageError: hasPic ? (_, __) {} : null,
+                child: hasPic ? null : const Icon(Icons.person, size: 18),
               ),
-            ),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  friend.fullName.isNotEmpty
+                      ? friend.fullName
+                      : friend.username,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       body: Column(

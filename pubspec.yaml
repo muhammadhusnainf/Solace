@@ -1,32 +1,20 @@
-name: social_app
-description: Flutter client for the social media API
+name: Solace
+description: Solace mobile app
 publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  # 3.8 is required by flutter_lints ^6.0.0; also satisfies flutter_riverpod
-  # ^3.4.1 (>=3.7.0) and every other dependency below.
   sdk: '>=3.8.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.9
-
-  # State management
   flutter_riverpod: ^3.4.1
-
-  # Networking
   dio: ^5.11.1
-
-  # Secure token storage
   flutter_secure_storage: ^10.3.1
   image_picker: ^1.2.3
-
-  # NOTE: jwt_decode (^0.3.1) has been removed — it hasn't been updated since
-  # 2021 and is effectively unmaintained. Decoding a JWT payload is just a
-  # base64url + JSON decode, so we now do it with a ~30-line local utility
-  # (lib/core/utils/jwt_utils.dart) instead of depending on a stale package.
+  video_player: ^2.14.1
 
 dev_dependencies:
   flutter_test:
@@ -34,8 +22,6 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
 
-# App icon settings. Generate the icons with:
-#   dart run flutter_launcher_icons
 flutter_launcher_icons:
   android: true
   ios: false

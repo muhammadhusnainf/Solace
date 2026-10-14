@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../feed_provider.dart';
 import '../likes_provider.dart';
 import '../models.dart';
+import '../widgets/post_media.dart';
 import '../widgets/post_detail_screen.dart';
 
 class ExploreScreen extends ConsumerWidget {
@@ -70,14 +71,7 @@ class _ExploreTile extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(4),
         child: hasImage
-          ? Image.network(
-              post.imageUrl!,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: scheme.surfaceContainerHighest,
-                child: const Icon(Icons.broken_image_outlined),
-              ),
-            )
+          ? PostThumb(post: post)
           : Container(
               color: scheme.surfaceContainerHighest,
               padding: const EdgeInsets.all(8),

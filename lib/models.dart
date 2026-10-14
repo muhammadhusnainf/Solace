@@ -1,4 +1,3 @@
-
 class AppUser {
   final int id;
   final String fullName;
@@ -38,6 +37,7 @@ class Post {
   final int userId;
   final String description;
   final String? imageUrl;
+  final String resourceType;
   final int likes;
   final String authorName;
   final String? authorProfilePicUrl;
@@ -47,6 +47,7 @@ class Post {
     required this.userId,
     required this.description,
     this.imageUrl,
+    this.resourceType = 'image',
     this.likes = 0,
     this.authorName = '',
     this.authorProfilePicUrl,
@@ -58,11 +59,14 @@ class Post {
       userId: asInt(json['user_id']),
       description: json['description']?.toString() ?? '',
       imageUrl: fixImageUrl(json['imageUrl']?.toString()),
+      resourceType: json['resource_type']?.toString() ?? 'image',
       likes: asInt(json['likes']),
       authorName: json['full_name']?.toString() ?? '',
       authorProfilePicUrl: fixImageUrl(json['profile_pic_url']?.toString()),
     );
   }
+
+  bool get isVideo => resourceType == 'video';
 
   static int asInt(dynamic v) {
     if (v == null) return 0;
@@ -108,9 +112,18 @@ class Comment {
       return '';
     }
 
+    int authorId() {
+      for (final k in ['user_id', 'userId', 'commenter_id', 'author_id']) {
+        if (json[k] != null) return Post.asInt(json[k]);
+      }
+      final u = json['user'];
+      if (u is Map) return Post.asInt(u['id']);
+      return 0;
+    }
+
     return Comment(
       id: Post.asInt(json['id']),
-      userId: Post.asInt(json['user_id']),
+      userId: authorId(),
       postId: Post.asInt(json['post_id']),
       comment: text(),
       fullName: json['full_name']?.toString() ?? '',
