@@ -193,6 +193,35 @@ class ApiClient {
     return (res.data as List).map((e) => Post.fromJson(e)).toList();
   }
 
+  Future<List<Moment>> getMoments() async {
+    final res = await dio.get('/api/moments');
+    _check(res, fallback: 'Could not load moments');
+    final data = res.data;
+    final list = data is Map ? data['moments'] : null;
+    if (list is! List) return [];
+    return list
+        .map((e) => Moment.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  Future<void> createMoment({
+    required int userId,
+    required Uint8List imageBytes,
+    required String imageName,
+    String? imageMime,
+  }) async {
+    final form = FormData.fromMap({
+      'user_id': userId.toString(),
+      'file': MultipartFile.fromBytes(
+        imageBytes,
+        filename: imageName,
+        contentType: DioMediaType.parse(imageMime ?? 'image/jpeg'),
+      ),
+    });
+    final res = await dio.post('/api/moments', data: form);
+    _check(res, fallback: 'Could not share moment');
+  }
+
   Future<Post> getPost(int postId) async {
     final res = await dio.get('/api/posts/$postId');
     _check(res, fallback: 'Could not load post');

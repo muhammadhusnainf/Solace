@@ -189,6 +189,58 @@ class ChatMessage {
   }
 }
 
+class Moment {
+  final int id;
+  final int userId;
+  final String imageUrl;
+  final DateTime createdAt;
+  final DateTime expiresAt;
+  final String username;
+  final String? profilePicUrl;
+
+  Moment({
+    required this.id,
+    required this.userId,
+    required this.imageUrl,
+    required this.createdAt,
+    required this.expiresAt,
+    this.username = '',
+    this.profilePicUrl,
+  });
+
+  factory Moment.fromJson(Map<String, dynamic> json) {
+    return Moment(
+      id: Post.asInt(json['id']),
+      userId: Post.asInt(json['user_id']),
+      imageUrl: fixImageUrl(json['image_url']?.toString()) ?? '',
+      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+          DateTime.now(),
+      expiresAt: DateTime.tryParse(json['expires_at']?.toString() ?? '') ??
+          DateTime.now().add(const Duration(hours: 24)),
+      username: json['username']?.toString() ?? '',
+      profilePicUrl: fixImageUrl(json['profile_pic_url']?.toString()),
+    );
+  }
+
+  bool get isActive => expiresAt.isAfter(DateTime.now());
+}
+
+class MomentGroup {
+  final int userId;
+  final String username;
+  final String? profilePicUrl;
+  final List<Moment> moments;
+
+  MomentGroup({
+    required this.userId,
+    required this.username,
+    required this.moments,
+    this.profilePicUrl,
+  });
+
+  DateTime get latest => moments.last.createdAt;
+}
+
 String? fixImageUrl(String? url) {
   if (url == null) return null;
   final t = url.trim();

@@ -4,7 +4,10 @@ import '../auth_provider.dart';
 import '../feed_provider.dart';
 import '../friends_provider.dart';
 import '../likes_provider.dart';
+import '../moments_provider.dart';
+import '../widgets/create_moment_dialog.dart';
 import '../widgets/create_post_dialog.dart';
+import '../widgets/moments_bar.dart';
 import '../widgets/post_card.dart';
 import 'explore_screen.dart';
 import 'friends_screen.dart';
@@ -30,10 +33,12 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
           icon: const Icon(Icons.add_box_outlined, size: 30),
           itemBuilder: (context) => [
             const PopupMenuItem(child: Text('Post'), value: 'post'),
+            const PopupMenuItem(child: Text('Moment'), value: 'moment'),
             const PopupMenuItem(child: Text('AI'), value: 'ai'),
           ],
           onSelected: (value) {
             if (value == 'post') showCreatePostDialog(context);
+            if (value == 'moment') showCreateMomentDialog(context);
           },
         ),
         actions: [
@@ -105,8 +110,10 @@ class _FeedTab extends ConsumerWidget {
     return RefreshIndicator(
       onRefresh: () async {
         ref.invalidate(feedProvider);
+        ref.invalidate(momentsProvider);
         await Future.wait([
           ref.read(feedProvider.future),
+          ref.read(momentsProvider.future),
           ref.read(likesProvider.notifier).refresh(),
         ]);
       },
@@ -114,16 +121,21 @@ class _FeedTab extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Failed to load feed: $err')),
         data: (posts) {
-          if (posts.isEmpty) {
-            return const Center(child: Text('No posts yet.'));
-          }
           return ListView.separated(
             keyboardDismissBehavior:
                 ScrollViewKeyboardDismissBehavior.onDrag,
-            itemCount: posts.length,
+            itemCount: posts.isEmpty ? 2 : posts.length + 1,
             separatorBuilder: (context, i) => const SizedBox(height: 16),
-            itemBuilder: (context, i) =>
-                PostCard(post: posts[i], interactive: true),
+            itemBuilder: (context, i) {
+              if (i == 0) return const MomentsBar();
+              if (posts.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.only(top: 60),
+                  child: Center(child: Text('No posts yet.')),
+                );
+              }
+              return PostCard(post: posts[i - 1], interactive: true);
+            },
           );
         },
       ),

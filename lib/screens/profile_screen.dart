@@ -3,18 +3,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth_provider.dart';
 import '../friends_provider.dart';
 import '../models.dart';
+import '../moments_provider.dart';
 import '../profile_provider.dart';
 import '../widgets/change_profile_photo_dialog.dart';
 import '../widgets/confirm_dialog.dart';
+import '../widgets/image_viewer.dart';
+import '../widgets/moments_bar.dart';
 import '../widgets/post_detail_screen.dart';
 import '../widgets/post_media.dart';
 import 'chat_screen.dart';
+import 'moment_viewer_screen.dart';
 
-void openProfile(BuildContext context, int userId) {
+Future<void> openProfile(BuildContext context, int userId) {
   final container = ProviderScope.containerOf(context);
   container.invalidate(myFriendsProvider);
   container.invalidate(friendStatusProvider(userId));
-  Navigator.of(context).push(MaterialPageRoute(
+  return Navigator.of(context).push(MaterialPageRoute(
     builder: (_) => Scaffold(
       appBar: AppBar(),
       body: ProfileView(userId: userId),
@@ -153,6 +157,26 @@ class _Header extends ConsumerWidget {
 
     final status = ref.watch(friendStateProvider(user.id));
 
+    final groups = ref.watch(momentsProvider).maybeWhen(
+          data: (g) => g,
+          orElse: () => <MomentGroup>[],
+        );
+    final seen = ref.watch(seenMomentsProvider);
+    final group =
+        isMe ? null : groups.where((g) => g.userId == user.id).firstOrNull;
+    final unseen =
+        group != null && !group.moments.every((m) => seen.contains(m.id));
+
+    void onAvatarTap() {
+      if (isMe) {
+        showChangeProfilePhotoDialog(context);
+      } else if (group != null) {
+        openMoments(context, [group], 0);
+      } else if (hasPic) {
+        openImageViewer(context, user.profilePicUrl!);
+      }
+    }
+
     Future<void> sendRequest() async {
       final messenger = ScaffoldMessenger.of(context);
       try {
@@ -206,21 +230,39 @@ class _Header extends ConsumerWidget {
       children: [
         const SizedBox(height: 40),
         GestureDetector(
-          onTap: isMe ? () => showChangeProfilePhotoDialog(context) : null,
+          onTap: onAvatarTap,
+          // long press always opens the photo, even when a moment is live
+          onLongPress: !isMe && hasPic
+              ? () => openImageViewer(context, user.profilePicUrl!)
+              : null,
           child: Stack(
             children: [
               Container(
-                padding: const EdgeInsets.all(4),
+                padding: EdgeInsets.all(group != null ? 3 : 0),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xffcbd5e1), width: 2),
+                  gradient: unseen ? momentRingGradient : null,
+                  color: group != null && !unseen ? Colors.grey.shade400 : null,
                 ),
-                child: CircleAvatar(
-                  radius: 56,
-                  backgroundImage:
-                      hasPic ? NetworkImage(user.profilePicUrl!) : null,
-                  onBackgroundImageError: hasPic ? (_, __) {} : null,
-                  child: hasPic ? null : const Icon(Icons.person, size: 48),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: group != null
+                        ? Theme.of(context).colorScheme.surface
+                        : null,
+                    border: group != null
+                        ? null
+                        : Border.all(
+                            color: const Color(0xffcbd5e1), width: 2),
+                  ),
+                  child: CircleAvatar(
+                    radius: 56,
+                    backgroundImage:
+                        hasPic ? NetworkImage(user.profilePicUrl!) : null,
+                    onBackgroundImageError: hasPic ? (_, __) {} : null,
+                    child: hasPic ? null : const Icon(Icons.person, size: 48),
+                  ),
                 ),
               ),
               if (isMe)
