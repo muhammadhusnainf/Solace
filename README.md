@@ -1,4 +1,4 @@
-# Social App (Solice)
+# Social App (Solace)
 
 A Flutter app for a social media API. You can post photos, like and comment, find people, add friends and chat with them.
 
@@ -12,13 +12,17 @@ Backend: https://social-media-app-five-rust.vercel.app
 
 ## What it does
 
-1. Sign up and log in
+1. Sign up and log in, with a show and hide button on the password field
 2. Scroll a feed of posts, like them and leave comments
-3. Create your own posts and delete them later
-4. Explore and search for people and posts
-5. Send friend requests and manage your friends list
-6. Chat with your friends
-7. Edit your profile and change your photo
+3. Double tap a photo to like it, and see how many comments a post has
+4. Share photos and videos, with play, pause, skip, mute and a progress bar for videos
+5. Post moments that disappear after 24 hours, and watch your friends' moments
+6. Create your own posts and delete them later
+7. Explore and search for people and posts
+8. Send friend requests and manage your friends list
+9. Chat with your friends
+10. Edit your profile and change your photo
+11. Tap someone's profile picture to see their moment, or hold it to see the full photo
 
 ## Built with
 
@@ -54,6 +58,3 @@ flutter pub get
 flutter run
 ```
 
-## Backend address
-
-The API address lives at the top of `lib/api_client.dart`. If you host your own backend, change it there.
