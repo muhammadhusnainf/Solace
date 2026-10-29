@@ -1,4 +1,4 @@
-name: solace
+name: Solace
 description: Solace mobile app
 publish_to: 'none'
 version: 1.3.0+3
