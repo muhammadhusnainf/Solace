@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'models.dart';
+import 'picked_media.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -222,6 +222,193 @@ class ApiClient {
     _check(res, fallback: 'Could not share moment');
   }
 
+  MultipartFile _filePart(PickedMedia m) => MultipartFile.fromBytes(
+        m.bytes,
+        filename: m.name,
+        contentType: DioMediaType.parse(m.mime),
+      );
+
+  List<T> _listFrom<T>(
+    Response res,
+    String key,
+    T Function(Map<String, dynamic>) parse,
+  ) {
+    final data = res.data;
+    final list = data is Map ? data[key] : null;
+    if (list is! List) return [];
+    return list
+        .whereType<Map>()
+        .map((e) => parse(Map<String, dynamic>.from(e)))
+        .toList();
+  }
+
+  Future<List<Scene>> getScenes({int limit = 10, int offset = 0}) async {
+    final res = await dio.get(
+      '/api/scenes',
+      queryParameters: {'limit': limit, 'offset': offset},
+    );
+    _check(res, fallback: 'Could not load scenes');
+    return _listFrom(res, 'scenes', Scene.fromJson);
+  }
+
+  Future<({bool liked, int count})> toggleSceneLike(int sceneId) async {
+    final res = await dio.post('/api/scenes/$sceneId/like');
+    _check(res, fallback: 'Could not update like');
+    final data = res.data;
+    final liked = data is Map &&
+        (data['is_liked'] == true || data['is_liked']?.toString() == '1');
+    final count = data is Map ? Post.asInt(data['likes_count']) : 0;
+    return (liked: liked, count: count);
+  }
+
+  Future<List<SceneComment>> getSceneComments(int sceneId) async {
+    final res = await dio.get('/api/scenes/$sceneId/comments');
+    _check(res, fallback: 'Could not load comments');
+    return _listFrom(res, 'comments', SceneComment.fromJson);
+  }
+
+  Future<void> addSceneComment(int sceneId, String content) async {
+    final res = await dio.post(
+      '/api/scenes/$sceneId/comments',
+      data: {'content': content},
+    );
+    _check(res, fallback: 'Could not post comment');
+  }
+
+  String _uploadError(DioException e) {
+    switch (e.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        return 'The upload took too long. Please try again';
+      case DioExceptionType.connectionError:
+        return 'Upload failed. Check your connection or try a smaller video';
+      default:
+        return e.message ?? 'Network error';
+    }
+  }
+
+  Future<Scene> createScene({
+    required PickedMedia video,
+    required String caption,
+    String visibility = 'public',
+    void Function(int sent, int total)? onProgress,
+  }) async {
+    final form = FormData.fromMap({
+      'file': _filePart(video),
+      'caption': caption,
+      'visibility': visibility,
+    });
+    final Response res;
+    try {
+      res = await dio.post(
+        '/api/scenes',
+        data: form,
+        onSendProgress: onProgress,
+        options: Options(
+          sendTimeout: const Duration(minutes: 10),
+          receiveTimeout: const Duration(minutes: 5),
+        ),
+      );
+    } on DioException catch (e) {
+      throw ApiException(_uploadError(e));
+    }
+    if (res.statusCode == 413) {
+      throw ApiException('That video is too large to upload', statusCode: 413);
+    }
+    _check(res, fallback: 'Could not publish scene');
+    final data = res.data;
+    final raw = data is Map ? data['scene'] : null;
+    if (raw is! Map) throw ApiException('Unexpected response from the server');
+    return Scene.fromJson(Map<String, dynamic>.from(raw));
+  }
+
+  Future<List<Journey>> getJourneys() async {
+    final res = await dio.get('/api/journeys');
+    _check(res, fallback: 'Could not load journeys');
+    return _listFrom(res, 'journeys', Journey.fromJson);
+  }
+
+  Future<Journey> createJourney({
+    required String title,
+    required String description,
+    required String visibility,
+    PickedMedia? cover,
+  }) async {
+    final form = FormData.fromMap({
+      'title': title,
+      'description': description,
+      'visibility': visibility,
+      'status': 'ongoing',
+      if (cover != null) 'cover': _filePart(cover),
+    });
+    final res = await dio.post(
+      '/api/journeys',
+      data: form,
+      options: Options(
+        sendTimeout: const Duration(minutes: 3),
+        receiveTimeout: const Duration(minutes: 3),
+      ),
+    );
+    _check(res, fallback: 'Could not create journey');
+    final data = res.data;
+    final raw = data is Map ? data['journey'] : null;
+    if (raw is! Map) throw ApiException('Unexpected response from the server');
+    return Journey.fromJson(Map<String, dynamic>.from(raw));
+  }
+
+  Future<List<JourneyEntry>> getJourneyEntries(int journeyId) async {
+    final res = await dio.get('/api/journeys/$journeyId/entries');
+    _check(res, fallback: 'Could not load memories');
+    return _listFrom(res, 'entries', JourneyEntry.fromJson);
+  }
+
+  Future<void> addJourneyEntry({
+    required int journeyId,
+    required String title,
+    required String content,
+    required DateTime date,
+    required List<PickedMedia> media,
+  }) async {
+    String two(int v) => v.toString().padLeft(2, '0');
+    final entryDate = '${date.year}-${two(date.month)}-${two(date.day)} 12:00:00';
+
+    final form = FormData.fromMap({
+      'title': title,
+      'content': content,
+      'entry_date': entryDate,
+      if (media.isNotEmpty) 'media': media.map(_filePart).toList(),
+    });
+    final res = await dio.post(
+      '/api/journeys/$journeyId/entries',
+      data: form,
+      options: Options(
+        sendTimeout: const Duration(minutes: 5),
+        receiveTimeout: const Duration(minutes: 5),
+      ),
+    );
+    _check(res, fallback: 'Could not save memory');
+  }
+
+  Future<void> addEntryMedia({
+    required int journeyId,
+    required int entryId,
+    required List<PickedMedia> media,
+  }) async {
+    final form = FormData.fromMap({
+      'media': media.map(_filePart).toList(),
+    });
+    final res = await dio.post(
+      '/api/journeys/$journeyId/entries/$entryId/media',
+      data: form,
+      options: Options(
+        sendTimeout: const Duration(minutes: 5),
+        receiveTimeout: const Duration(minutes: 5),
+      ),
+    );
+    _check(res, fallback: 'Could not add media');
+  }
+
   Future<Post> getPost(int postId) async {
     final res = await dio.get('/api/posts/$postId');
     _check(res, fallback: 'Could not load post');
@@ -287,9 +474,6 @@ class ApiClient {
       '/api/comments/$userId/$postId',
       data: {'content': content, 'comment': content},
     );
-    if (res.statusCode == null || res.statusCode! >= 300) {
-      debugPrint('addComment failed: ${res.statusCode} ${res.data}');
-    }
     _check(res, fallback: 'Could not add comment');
   }
 
@@ -336,12 +520,6 @@ class ApiClient {
 
     walk(data);
 
-    if (users.isEmpty && posts.isEmpty) {
-      final raw = data.toString();
-      debugPrint('search("$term") found nothing. Response type: '
-          '${data.runtimeType}, body: '
-          '${raw.length > 400 ? raw.substring(0, 400) : raw}');
-    }
     return SearchResults(users: users, posts: posts);
   }
 
@@ -349,8 +527,6 @@ class ApiClient {
     try {
       return await call();
     } on DioException catch (e) {
-      debugPrint('$what failed: ${e.type} | ${e.message} | '
-          '${e.requestOptions.method} ${e.requestOptions.uri}');
       switch (e.type) {
         case DioExceptionType.connectionTimeout:
         case DioExceptionType.sendTimeout:

@@ -4,6 +4,7 @@ import '../api_client.dart';
 import '../auth_provider.dart';
 import '../comments_provider.dart';
 import '../profile_provider.dart';
+import '../cached_image.dart';
 
 class InlineCommentField extends ConsumerStatefulWidget {
   const InlineCommentField({super.key, required this.postId});
@@ -85,8 +86,8 @@ class _InlineCommentFieldState extends ConsumerState<InlineCommentField> {
           children: [
             CircleAvatar(
               radius: 16,
-              backgroundImage: hasPic ? NetworkImage(avatarUrl) : null,
-              onBackgroundImageError: hasPic ? (_, __) {} : null,
+              backgroundImage: hasPic ? cachedImage(avatarUrl) : null,
+              onBackgroundImageError: hasPic ? (_, _) {} : null,
               child: hasPic ? null : const Icon(Icons.person, size: 18),
             ),
             const SizedBox(width: 10),
@@ -107,7 +108,7 @@ class _InlineCommentFieldState extends ConsumerState<InlineCommentField> {
                       fontSize: 14, color: scheme.onSurfaceVariant),
                   isDense: true,
                   filled: true,
-                  fillColor: scheme.surfaceContainerHighest.withOpacity(0.5),
+                  fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
                   contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 10),
                   border: border(scheme.outlineVariant),
@@ -132,7 +133,6 @@ class _InlineCommentFieldState extends ConsumerState<InlineCommentField> {
                         onPressed:
                             value.text.trim().isEmpty ? null : _send,
                         style: TextButton.styleFrom(
-                          foregroundColor: Colors.blue,
                           padding: EdgeInsets.zero,
                           minimumSize: const Size(56, 36),
                         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../cached_image.dart';
 
 class CommentInputBar extends StatelessWidget {
   const CommentInputBar({
@@ -43,7 +44,7 @@ class CommentInputBar extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 6),
                 child: CircleAvatar(
                   radius: 20,
-                  backgroundImage: hasPic ? NetworkImage(avatarUrl!) : null,
+                  backgroundImage: hasPic ? cachedImage(avatarUrl!) : null,
                   child: hasPic ? null : const Icon(Icons.person, size: 22),
                 ),
               ),

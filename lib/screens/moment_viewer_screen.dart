@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../auth_provider.dart';
 import '../models.dart';
 import '../moments_provider.dart';
+import '../profile_provider.dart';
 import 'profile_screen.dart';
+import '../cached_image.dart';
 
 Future<void> openMoments(
   BuildContext context,
@@ -37,7 +40,6 @@ class _MomentViewerScreenState extends ConsumerState<MomentViewerScreen>
   late int _group;
   late int _index;
 
-  // bumps on every change so a slow image can't start a stale timer
   int _token = 0;
   bool _ready = false;
   bool _holding = false;
@@ -80,7 +82,7 @@ class _MomentViewerScreenState extends ConsumerState<MomentViewerScreen>
     setState(() => _ready = false);
 
     try {
-      await precacheImage(NetworkImage(moment.imageUrl), context);
+      await precacheImage(cachedImage(moment.imageUrl), context);
     } catch (_) {}
 
     if (!mounted || token != _token) return;
@@ -165,7 +167,11 @@ class _MomentViewerScreenState extends ConsumerState<MomentViewerScreen>
   }
 
   Widget _header(MomentGroup g, Moment m) {
-    final hasPic = g.profilePicUrl != null && g.profilePicUrl!.isNotEmpty;
+    final isMine = g.userId == ref.read(authProvider).user?.id;
+    final ownPic =
+        isMine ? ref.watch(userProfileProvider(g.userId)).value?.profilePicUrl : null;
+    final pic = ownPic ?? g.profilePicUrl;
+    final hasPic = pic != null && pic.isNotEmpty;
 
     return Padding(
       padding: const EdgeInsets.only(left: 10, right: 60),
@@ -181,7 +187,7 @@ class _MomentViewerScreenState extends ConsumerState<MomentViewerScreen>
                   CircleAvatar(
                     radius: 16,
                     backgroundImage:
-                        hasPic ? NetworkImage(g.profilePicUrl!) : null,
+                        hasPic ? cachedImage(pic) : null,
                     child: hasPic ? null : const Icon(Icons.person, size: 18),
                   ),
                   const SizedBox(width: 10),
@@ -259,8 +265,8 @@ class _MomentViewerScreenState extends ConsumerState<MomentViewerScreen>
         child: Stack(
           children: [
             Positioned.fill(
-              child: Image.network(
-                m.imageUrl,
+              child: Image(
+                image: cachedImage(m.imageUrl),
                 key: ValueKey(m.id),
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) => const Center(
@@ -299,7 +305,6 @@ class _MomentViewerScreenState extends ConsumerState<MomentViewerScreen>
                 ),
               ),
             ),
-            // top right corner, level with the avatar row
             Positioned(
               top: MediaQuery.of(context).padding.top + 13,
               right: 10,

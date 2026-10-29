@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../api_client.dart';
 import '../auth_provider.dart';
 import '../moments_provider.dart';
+import '../profile_provider.dart';
 import '../sounds.dart';
 
 Future<void> showCreateMomentDialog(BuildContext context) {
@@ -16,8 +17,6 @@ Future<void> showCreateMomentDialog(BuildContext context) {
 }
 
 final ButtonStyle _blueButton = FilledButton.styleFrom(
-  backgroundColor: Colors.blue,
-  foregroundColor: Colors.white,
   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
 );
 
@@ -78,6 +77,7 @@ class _CreateMomentDialogState extends ConsumerState<CreateMomentDialog> {
         imageMime: _mime,
       );
       ref.invalidate(momentsProvider);
+      ref.invalidate(userProfileProvider(user.id));
       Sounds.success();
       navigator.pop();
       messenger.showSnackBar(const SnackBar(content: Text('Moment shared')));
@@ -180,7 +180,6 @@ class _CreateMomentDialogState extends ConsumerState<CreateMomentDialog> {
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: _submitting ? null : _pick,
-              style: TextButton.styleFrom(foregroundColor: Colors.blue),
               child: const Text('Change photo'),
             ),
           ),

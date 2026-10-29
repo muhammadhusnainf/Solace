@@ -2,9 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 import '../models.dart';
+import '../cached_image.dart';
 
-// cloudinary gives a still frame if you swap the extension to jpg
 String videoPosterUrl(String url) {
   final dot = url.lastIndexOf('.');
   final slash = url.lastIndexOf('/');
@@ -20,8 +21,8 @@ class PostMedia extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (post.isVideo) return _VideoView(url: post.imageUrl!);
-    return Image.network(
-      post.imageUrl!,
+    return Image(
+      image: cachedImage(post.imageUrl!),
       width: double.infinity,
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) => const SizedBox(
@@ -42,8 +43,8 @@ class PostThumb extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     if (!post.isVideo) {
-      return Image.network(
-        post.imageUrl!,
+      return Image(
+        image: cachedImage(post.imageUrl!),
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => Container(
           color: scheme.surfaceContainerHighest,
@@ -55,8 +56,8 @@ class PostThumb extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        Image.network(
-          videoPosterUrl(post.imageUrl!),
+        Image(
+          image: cachedImage(videoPosterUrl(post.imageUrl!)),
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) => Container(
             color: scheme.surfaceContainerHighest,
@@ -73,6 +74,15 @@ class PostThumb extends StatelessWidget {
   }
 }
 
+class UrlVideo extends StatelessWidget {
+  const UrlVideo({super.key, required this.url});
+
+  final String url;
+
+  @override
+  Widget build(BuildContext context) => _VideoView(url: url);
+}
+
 class _VideoView extends StatefulWidget {
   const _VideoView({required this.url});
 
@@ -82,8 +92,8 @@ class _VideoView extends StatefulWidget {
   State<_VideoView> createState() => _VideoViewState();
 }
 
-class _VideoViewState extends State<_VideoView> {
-  // only one video plays at a time in a scrolling feed
+class _VideoViewState extends State<_VideoView>
+    with WidgetsBindingObserver {
   static _VideoViewState? _active;
 
   VideoPlayerController? _controller;
@@ -92,9 +102,22 @@ class _VideoViewState extends State<_VideoView> {
   bool _muted = false;
   int _skipSeconds = 0;
   Timer? _skipTimer;
+  final _detectorKey = UniqueKey();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) _pause();
+  }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _skipTimer?.cancel();
     if (_active == this) _active = null;
     _controller?.dispose();
@@ -175,6 +198,16 @@ class _VideoViewState extends State<_VideoView> {
 
   @override
   Widget build(BuildContext context) {
+    return VisibilityDetector(
+      key: _detectorKey,
+      onVisibilityChanged: (info) {
+        if (mounted && info.visibleFraction < 0.5) _pause();
+      },
+      child: _content(),
+    );
+  }
+
+  Widget _content() {
     final c = _controller;
     if (c == null) return _poster();
 
@@ -186,7 +219,6 @@ class _VideoViewState extends State<_VideoView> {
         alignment: Alignment.center,
         children: [
           VideoPlayer(c),
-          // left half skips back, right half skips forward on double tap
           Row(
             children: [
               Expanded(
@@ -293,8 +325,8 @@ class _VideoViewState extends State<_VideoView> {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Image.network(
-            videoPosterUrl(widget.url),
+          Image(
+            image: cachedImage(videoPosterUrl(widget.url)),
             width: double.infinity,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) => Container(

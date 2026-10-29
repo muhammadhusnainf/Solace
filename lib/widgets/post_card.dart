@@ -7,15 +7,24 @@ import '../models.dart';
 import '../profile_provider.dart';
 import '../screens/profile_screen.dart';
 import 'comment_sheet.dart';
+import 'highlight_text.dart';
 import 'post_detail_screen.dart';
 import 'post_media.dart';
+import '../cached_image.dart';
 
 class PostCard extends ConsumerWidget {
-  const PostCard({super.key, required this.post, this.interactive = false});
+  const PostCard({
+    super.key,
+    required this.post,
+    this.interactive = false,
+    this.highlight = '',
+  });
 
   final Post post;
 
   final bool interactive;
+
+  final String highlight;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -63,7 +72,7 @@ class PostCard extends ConsumerWidget {
                 onTap: openAuthor,
                 child: CircleAvatar(
                   backgroundImage: hasAvatar
-                      ? NetworkImage(post.authorProfilePicUrl!)
+                      ? cachedImage(post.authorProfilePicUrl!)
                       : null,
                   child: hasAvatar ? null : const Icon(Icons.person),
                 ),
@@ -75,8 +84,9 @@ class PostCard extends ConsumerWidget {
                   onTap: openAuthor,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Text(
+                    child: HighlightText(
                       post.authorName.isNotEmpty ? post.authorName : 'Unknown',
+                      query: highlight,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyLarge,
@@ -113,7 +123,7 @@ class PostCard extends ConsumerWidget {
         ),
         Padding(
           padding: const EdgeInsets.only(left: 14),
-          child: Text(post.description),
+          child: HighlightText(post.description, query: highlight),
         ),
         if (commentCount > 0)
           InkWell(
@@ -167,8 +177,8 @@ class _AddCommentPrompt extends ConsumerWidget {
           children: [
             CircleAvatar(
               radius: 13,
-              backgroundImage: hasPic ? NetworkImage(avatarUrl) : null,
-              onBackgroundImageError: hasPic ? (_, __) {} : null,
+              backgroundImage: hasPic ? cachedImage(avatarUrl) : null,
+              onBackgroundImageError: hasPic ? (_, _) {} : null,
               child: hasPic ? null : const Icon(Icons.person, size: 15),
             ),
             const SizedBox(width: 10),

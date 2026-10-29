@@ -68,7 +68,9 @@ class _ConfirmDialog extends StatelessWidget {
                 child: Center(
                   child: Text(confirmLabel,
                       style: TextStyle(
-                          color: destructive ? Colors.red : Colors.blue,
+                          color: destructive
+                              ? Colors.red
+                              : Theme.of(context).colorScheme.primary,
                           fontSize: 15,
                           fontWeight: FontWeight.w600)),
                 ),

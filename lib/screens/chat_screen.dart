@@ -7,6 +7,7 @@ import '../auth_provider.dart';
 import '../models.dart';
 import '../sounds.dart';
 import 'profile_screen.dart';
+import '../cached_image.dart';
 
 void openChat(BuildContext context, AppUser friend) {
   Navigator.of(context).push(
@@ -147,8 +148,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               CircleAvatar(
                 radius: 16,
                 backgroundImage:
-                    hasPic ? NetworkImage(friend.profilePicUrl!) : null,
-                onBackgroundImageError: hasPic ? (_, __) {} : null,
+                    hasPic ? cachedImage(friend.profilePicUrl!) : null,
+                onBackgroundImageError: hasPic ? (_, _) {} : null,
                 child: hasPic ? null : const Icon(Icons.person, size: 18),
               ),
               const SizedBox(width: 12),
@@ -269,7 +270,7 @@ class _Bubble extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(_time(at!),
                     style: TextStyle(
-                        color: fg.withOpacity(0.7), fontSize: 10)),
+                        color: fg.withValues(alpha: 0.7), fontSize: 10)),
               ],
             ],
           ),

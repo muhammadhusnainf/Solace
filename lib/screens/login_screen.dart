@@ -70,7 +70,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: 32),
                     AuthField(
                       controller: _emailController,
-                      hint: 'someone@example.com',
+                      hint: 'Email',
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       validator: (v) => (v == null || v.trim().isEmpty)
@@ -123,7 +123,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         TextButton(
                           onPressed: () {
-                            // clear stale errors when switching screens
                             final auth = ref.read(authProvider.notifier);
                             auth.clearError();
                             Navigator.of(context)

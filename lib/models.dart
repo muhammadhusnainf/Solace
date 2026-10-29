@@ -241,6 +241,200 @@ class MomentGroup {
   DateTime get latest => moments.last.createdAt;
 }
 
+class Scene {
+  final int id;
+  final int userId;
+  final String videoUrl;
+  final String? thumbnailUrl;
+  final String caption;
+  final String username;
+  final String? profilePicUrl;
+  final int likesCount;
+  final bool isLiked;
+
+  const Scene({
+    required this.id,
+    required this.userId,
+    required this.videoUrl,
+    this.thumbnailUrl,
+    this.caption = '',
+    this.username = '',
+    this.profilePicUrl,
+    this.likesCount = 0,
+    this.isLiked = false,
+  });
+
+  factory Scene.fromJson(Map<String, dynamic> json) {
+    final liked = json['is_liked'];
+    return Scene(
+      id: Post.asInt(json['id']),
+      userId: Post.asInt(json['user_id']),
+      videoUrl: json['video_url']?.toString() ?? '',
+      thumbnailUrl: fixImageUrl(json['thumbnail_url']?.toString()),
+      caption: json['caption']?.toString() ?? '',
+      username: json['username']?.toString() ?? '',
+      profilePicUrl: fixImageUrl(json['profile_pic_url']?.toString()),
+      likesCount: Post.asInt(json['likes_count']),
+      isLiked: liked == true || liked?.toString() == '1',
+    );
+  }
+
+  Scene copyWith({int? likesCount, bool? isLiked}) {
+    return Scene(
+      id: id,
+      userId: userId,
+      videoUrl: videoUrl,
+      thumbnailUrl: thumbnailUrl,
+      caption: caption,
+      username: username,
+      profilePicUrl: profilePicUrl,
+      likesCount: likesCount ?? this.likesCount,
+      isLiked: isLiked ?? this.isLiked,
+    );
+  }
+}
+
+class SceneComment {
+  final int id;
+  final int userId;
+  final String content;
+  final DateTime? createdAt;
+  final String username;
+  final String? profilePicUrl;
+
+  const SceneComment({
+    required this.id,
+    required this.userId,
+    required this.content,
+    this.createdAt,
+    this.username = '',
+    this.profilePicUrl,
+  });
+
+  factory SceneComment.fromJson(Map<String, dynamic> json) {
+    return SceneComment(
+      id: Post.asInt(json['id']),
+      userId: Post.asInt(json['user_id']),
+      content: json['content']?.toString() ?? '',
+      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
+      username: json['username']?.toString() ?? '',
+      profilePicUrl: fixImageUrl(json['profile_pic_url']?.toString()),
+    );
+  }
+}
+
+class Journey {
+  final int id;
+  final String title;
+  final String description;
+  final String? coverUrl;
+  final String visibility;
+  final String status;
+
+  const Journey({
+    required this.id,
+    required this.title,
+    this.description = '',
+    this.coverUrl,
+    this.visibility = 'private',
+    this.status = 'ongoing',
+  });
+
+  factory Journey.fromJson(Map<String, dynamic> json) {
+    return Journey(
+      id: Post.asInt(json['id']),
+      title: json['title']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      coverUrl: fixImageUrl((json['cover_url'] ?? json['cover'])?.toString()),
+      visibility: json['visibility']?.toString() ?? 'private',
+      status: json['status']?.toString() ?? 'ongoing',
+    );
+  }
+
+  bool get isCompleted => status == 'completed';
+
+  String get visibilityLabel {
+    switch (visibility) {
+      case 'public':
+        return 'Public';
+      case 'followers':
+        return 'Followers';
+      default:
+        return 'Only me';
+    }
+  }
+}
+
+class JourneyMedia {
+  final int id;
+  final String url;
+  final String type;
+
+  const JourneyMedia({required this.id, required this.url, this.type = 'image'});
+
+  factory JourneyMedia.fromJson(Map<String, dynamic> json) {
+    return JourneyMedia(
+      id: Post.asInt(json['id']),
+      url: fixImageUrl(json['media_url']?.toString()) ?? '',
+      type: json['media_type']?.toString() ?? 'image',
+    );
+  }
+
+  bool get isVideo => type == 'video';
+}
+
+class JourneyEntry {
+  final int id;
+  final String title;
+  final String content;
+  final DateTime entryDate;
+  final List<JourneyMedia> media;
+
+  const JourneyEntry({
+    required this.id,
+    required this.entryDate,
+    this.title = '',
+    this.content = '',
+    this.media = const [],
+  });
+
+  factory JourneyEntry.fromJson(Map<String, dynamic> json) {
+    final rawMedia = json['media'];
+    return JourneyEntry(
+      id: Post.asInt(json['id']),
+      title: json['title']?.toString() ?? '',
+      content: json['content']?.toString() ?? '',
+      entryDate: DateTime.tryParse(json['entry_date']?.toString() ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      media: rawMedia is List
+          ? rawMedia
+              .whereType<Map>()
+              .map((e) => JourneyMedia.fromJson(Map<String, dynamic>.from(e)))
+              .where((m) => m.url.isNotEmpty)
+              .toList()
+          : const [],
+    );
+  }
+}
+
+String formatDate(DateTime d) {
+  const months = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+  return '${months[d.month - 1]} ${d.day}, ${d.year}';
+}
+
 String? fixImageUrl(String? url) {
   if (url == null) return null;
   final t = url.trim();

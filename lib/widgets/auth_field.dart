@@ -38,7 +38,6 @@ class _AuthFieldState extends State<AuthField> {
     return TextFormField(
       controller: widget.controller,
       obscureText: _hidden,
-      // keeps the keyboard from caching passwords
       enableSuggestions: !widget.obscureText,
       autocorrect: !widget.obscureText,
       keyboardType: widget.keyboardType,

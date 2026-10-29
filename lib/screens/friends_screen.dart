@@ -9,6 +9,7 @@ import '../profile_provider.dart';
 import '../search_provider.dart';
 import 'chat_screen.dart';
 import 'profile_screen.dart';
+import '../cached_image.dart';
 
 class FriendsScreen extends ConsumerWidget {
   const FriendsScreen({super.key});
@@ -79,8 +80,8 @@ class _Avatar extends StatelessWidget {
     final hasPic = url != null && url.isNotEmpty;
     return CircleAvatar(
       radius: radius,
-      backgroundImage: hasPic ? NetworkImage(url) : null,
-      onBackgroundImageError: hasPic ? (_, __) {} : null,
+      backgroundImage: hasPic ? cachedImage(url) : null,
+      onBackgroundImageError: hasPic ? (_, _) {} : null,
       child: hasPic ? null : const Icon(Icons.person),
     );
   }
@@ -571,9 +572,10 @@ class _PersonTile extends ConsumerWidget {
                       );
                     }
                   },
-                  child: const Text('Follow',
+                  child: Text('Follow',
                       style: TextStyle(
-                          color: Colors.blue, fontWeight: FontWeight.w600)),
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w600)),
                 ),
             },
     );

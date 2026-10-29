@@ -12,6 +12,7 @@ import '../sounds.dart';
 import 'comment_input_bar.dart';
 import 'confirm_dialog.dart';
 import 'post_card.dart';
+import '../cached_image.dart';
 
 class PostDetailScreen extends ConsumerStatefulWidget {
   const PostDetailScreen({super.key, required this.post});
@@ -218,7 +219,7 @@ class _CommentTile extends StatelessWidget {
           : () => _open(context),
       leading: CircleAvatar(
         radius: 16,
-        backgroundImage: hasPic ? NetworkImage(comment.profilePicUrl!) : null,
+        backgroundImage: hasPic ? cachedImage(comment.profilePicUrl!) : null,
         child: hasPic ? null : const Icon(Icons.person, size: 18),
       ),
       title: RichText(

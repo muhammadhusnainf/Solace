@@ -52,8 +52,7 @@ class LikesNotifier extends Notifier<LikesState> {
       final ids = await api.getLikedPostIds(userId);
       if (ref.read(authProvider).user?.id != userId) return;
       state = LikesState(likedIds: ids);
-    } catch (_) {
-    }
+    } catch (_) {}
   }
 
   Future<void> toggle(int postId, int currentCount) async {

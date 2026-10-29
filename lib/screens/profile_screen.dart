@@ -13,6 +13,7 @@ import '../widgets/post_detail_screen.dart';
 import '../widgets/post_media.dart';
 import 'chat_screen.dart';
 import 'moment_viewer_screen.dart';
+import '../cached_image.dart';
 
 Future<void> openProfile(BuildContext context, int userId) {
   final container = ProviderScope.containerOf(context);
@@ -231,7 +232,6 @@ class _Header extends ConsumerWidget {
         const SizedBox(height: 40),
         GestureDetector(
           onTap: onAvatarTap,
-          // long press always opens the photo, even when a moment is live
           onLongPress: !isMe && hasPic
               ? () => openImageViewer(context, user.profilePicUrl!)
               : null,
@@ -259,8 +259,8 @@ class _Header extends ConsumerWidget {
                   child: CircleAvatar(
                     radius: 56,
                     backgroundImage:
-                        hasPic ? NetworkImage(user.profilePicUrl!) : null,
-                    onBackgroundImageError: hasPic ? (_, __) {} : null,
+                        hasPic ? cachedImage(user.profilePicUrl!) : null,
+                    onBackgroundImageError: hasPic ? (_, _) {} : null,
                     child: hasPic ? null : const Icon(Icons.person, size: 48),
                   ),
                 ),
@@ -272,7 +272,7 @@ class _Header extends ConsumerWidget {
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Colors.blue,
+                      color: Theme.of(context).colorScheme.primary,
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 2),
                     ),
@@ -341,10 +341,12 @@ class _GreyButton extends StatelessWidget {
     return TextButton(
       onPressed: onPressed,
       style: TextButton.styleFrom(
-        backgroundColor: const Color(0xffe2e8f0),
-        foregroundColor: Colors.black,
-        disabledBackgroundColor: const Color(0xffe2e8f0),
-        disabledForegroundColor: Colors.black45,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        disabledBackgroundColor:
+            Theme.of(context).colorScheme.surfaceContainerHighest,
+        disabledForegroundColor:
+            Theme.of(context).colorScheme.onSurfaceVariant,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         minimumSize: Size.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,

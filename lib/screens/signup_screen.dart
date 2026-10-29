@@ -26,7 +26,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     super.dispose();
   }
 
-  // rough check only, server does the real validation
   static final _emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
 
   String? _required(String? value, String label) {
@@ -56,7 +55,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
-    // pop back so the feed behind this screen shows up
     ref.listen(authProvider, (previous, next) {
       if (next.isSignedIn) {
         Navigator.of(context).popUntil((route) => route.isFirst);
@@ -99,7 +97,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     const SizedBox(height: 32),
                     AuthField(
                       controller: _emailController,
-                      hint: 'someone@example.com',
+                      hint: 'Email',
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       validator: _validateEmail,

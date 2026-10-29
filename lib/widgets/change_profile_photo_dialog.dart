@@ -8,6 +8,7 @@ import '../api_client.dart';
 import '../auth_provider.dart';
 import '../feed_provider.dart';
 import '../profile_provider.dart';
+import '../cached_image.dart';
 
 Future<void> showChangeProfilePhotoDialog(BuildContext context) {
   return showDialog(
@@ -109,7 +110,7 @@ class _ChangeProfilePhotoDialogState
     if (_bytes != null) {
       avatar = MemoryImage(_bytes!);
     } else if (hasCurrent) {
-      avatar = NetworkImage(currentUrl);
+      avatar = cachedImage(currentUrl);
     }
 
     return PopScope(
@@ -137,7 +138,7 @@ class _ChangeProfilePhotoDialogState
                       radius: 48,
                       backgroundImage: avatar,
                       onBackgroundImageError:
-                          avatar == null ? null : (_, __) {},
+                          avatar == null ? null : (_, _) {},
                       child: avatar == null
                           ? const Icon(Icons.person, size: 48)
                           : null,
@@ -153,8 +154,6 @@ class _ChangeProfilePhotoDialogState
                               ? null
                               : (_bytes == null ? _choose : _upload),
                           style: FilledButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(4)),
                           ),

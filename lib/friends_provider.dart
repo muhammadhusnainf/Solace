@@ -31,8 +31,7 @@ class RequestedNotifier extends Notifier<Set<int>> {
     try {
       final incoming = await api.getIncomingFriendRequests(me);
       theyAskedFirst = incoming.any((u) => u.id == targetId);
-    } catch (_) {
-    }
+    } catch (_) {}
     if (theyAskedFirst) {
       await acceptRequest(targetId);
       return;
@@ -132,8 +131,7 @@ class SentRequestsNotifier extends Notifier<List<int>> {
       final saved =
           (jsonDecode(raw) as List).map((e) => int.parse(e.toString()));
       state = [...state, ...saved.where((id) => !state.contains(id))];
-    } catch (_) {
-    }
+    } catch (_) {}
   }
 
   Future<void> add(int id) async {

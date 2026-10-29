@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../cached_image.dart';
 
 Future<void> openImageViewer(BuildContext context, String url) {
   return Navigator.of(context).push(
@@ -31,7 +32,6 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
       return;
     }
     const scale = 2.5;
-    // zoom in around the spot that was tapped
     _transform.value = Matrix4.diagonal3Values(scale, scale, 1)
       ..setTranslationRaw(
         -_tapAt.dx * (scale - 1),
@@ -57,14 +57,16 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
           minScale: 1,
           maxScale: 5,
           child: Center(
-            child: Image.network(
-              widget.url,
+            child: Image(
+              image: cachedImage(widget.url),
               fit: BoxFit.contain,
-              loadingBuilder: (context, child, progress) => progress == null
-                  ? child
-                  : const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    ),
+              frameBuilder: (context, child, frame, loadedSync) =>
+                  frame == null && !loadedSync
+                      ? const Center(
+                          child:
+                              CircularProgressIndicator(color: Colors.white),
+                        )
+                      : child,
               errorBuilder: (context, error, stackTrace) => const Icon(
                 Icons.broken_image_outlined,
                 color: Colors.white,

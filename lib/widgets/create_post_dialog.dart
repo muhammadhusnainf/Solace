@@ -24,8 +24,6 @@ class CreatePostDialog extends ConsumerStatefulWidget {
 }
 
 final ButtonStyle _blueButton = FilledButton.styleFrom(
-  backgroundColor: Colors.blue,
-  foregroundColor: Colors.white,
   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
 );
 
@@ -221,7 +219,6 @@ class _CreatePostDialogState extends ConsumerState<CreatePostDialog> {
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: _submitting ? null : _change,
-                style: TextButton.styleFrom(foregroundColor: Colors.blue),
                 child: Text(_isVideo ? 'Change video' : 'Change photo'),
               ),
             ),
