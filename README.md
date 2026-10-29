@@ -16,13 +16,18 @@ Backend: https://social-media-app-five-rust.vercel.app
 2. Scroll a feed of posts, like them and leave comments
 3. Double tap a photo to like it, and see how many comments a post has
 4. Share photos and videos, with play, pause, skip, mute and a progress bar for videos
-5. Post moments that disappear after 24 hours, and watch your friends' moments
+5. Post moments that disappear after 24 hours, shown as boxes, and watch your friends' moments
 6. Create your own posts and delete them later
-7. Explore and search for people and posts
-8. Send friend requests and manage your friends list
-9. Chat with your friends
-10. Edit your profile and change your photo
-11. Tap someone's profile picture to see their moment, or hold it to see the full photo
+7. Discover posts on a style wall and search for people and posts, with your search highlighted in the results
+8. Scenes: swipe through short videos, like, comment and post your own
+9. Journeys: create a chapter with a cover and add memories with photos and videos
+10. Send friend requests and manage your friends list
+11. Chat with your friends
+12. Edit your profile and change your photo
+13. Tap someone's profile picture to see their moment, or hold it to see the full photo
+14. Dark mode and theme colors, remembered after you close the app
+15. Videos pause when you scroll away, and images load faster because they are saved on your phone
+16. A friendly message when you are offline
 
 ## Built with
 
