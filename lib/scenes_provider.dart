@@ -81,6 +81,11 @@ class ScenesNotifier extends AsyncNotifier<List<Scene>> {
 final scenesProvider =
     AsyncNotifierProvider<ScenesNotifier, List<Scene>>(ScenesNotifier.new);
 
+final userScenesProvider =
+    FutureProvider.autoDispose.family<List<Scene>, int>((ref, userId) {
+  return api.getUserScenes(userId);
+});
+
 final sceneCommentsProvider = FutureProvider.autoDispose
     .family<List<SceneComment>, int>((ref, sceneId) {
   return api.getSceneComments(sceneId);

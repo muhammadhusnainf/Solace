@@ -6,6 +6,8 @@ import '../theme_provider.dart';
 Future<void> showThemeSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
     showDragHandle: true,
     builder: (_) => const _ThemeSheet(),
   );
@@ -17,34 +19,47 @@ class _ThemeSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final accent = ref.watch(accentProvider);
-    final scheme = Theme.of(context).colorScheme;
+    final shade = ref.watch(darkShadeProvider);
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final showAccent = !dark || shade.surface == null;
 
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Theme color', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text(
-              'Tints light mode. Dark mode stays the same',
-              style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
-            ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
             _Group(
               label: 'Colors',
               items: accentChoices,
-              current: accent,
-              onPick: (a) => _pick(ref, a),
+              current: showAccent ? accent : null,
+              onPick: (a) => _pickAccent(ref, a),
             ),
             const SizedBox(height: 18),
             _Group(
               label: 'Gradients',
               items: gradientChoices,
-              current: accent,
-              onPick: (a) => _pick(ref, a),
+              current: showAccent ? accent : null,
+              onPick: (a) => _pickAccent(ref, a),
+            ),
+            const SizedBox(height: 26),
+            Text('Dark mode', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 12,
+              runSpacing: 14,
+              children: [
+                for (final s in darkShades)
+                  _ShadeChip(
+                    shade: s,
+                    accent: accent,
+                    selected: s.id == shade.id,
+                    onTap: () => _pickShade(ref, s, !dark),
+                  ),
+              ],
             ),
           ],
         ),
@@ -52,9 +67,15 @@ class _ThemeSheet extends ConsumerWidget {
     );
   }
 
-  void _pick(WidgetRef ref, AppAccent a) {
+  void _pickAccent(WidgetRef ref, AppAccent a) {
     Sounds.tap();
     ref.read(accentProvider.notifier).set(a);
+  }
+
+  void _pickShade(WidgetRef ref, DarkShade s, bool light) {
+    Sounds.tap();
+    ref.read(darkShadeProvider.notifier).set(s);
+    if (light) ref.read(themeProvider.notifier).setDark(true);
   }
 }
 
@@ -68,7 +89,7 @@ class _Group extends StatelessWidget {
 
   final String label;
   final List<AppAccent> items;
-  final AppAccent current;
+  final AppAccent? current;
   final void Function(AppAccent) onPick;
 
   @override
@@ -85,7 +106,7 @@ class _Group extends StatelessWidget {
             for (final a in items)
               _Swatch(
                 accent: a,
-                selected: a.id == current.id,
+                selected: current != null && a.id == current!.id,
                 onTap: () => onPick(a),
               ),
           ],
@@ -130,6 +151,64 @@ class _Swatch extends StatelessWidget {
         child: selected
             ? const Icon(Icons.check, color: Colors.white, size: 22)
             : null,
+      ),
+    );
+  }
+}
+
+class _ShadeChip extends StatelessWidget {
+  const _ShadeChip({
+    required this.shade,
+    required this.accent,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final DarkShade shade;
+  final AppAccent accent;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final preview =
+        shade.surface ?? Color.lerp(Colors.black, accent.seed, 0.28)!;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: 66,
+        child: Column(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: preview,
+                border: Border.all(
+                  color: selected ? scheme.onSurface : scheme.outlineVariant,
+                  width: selected ? 3 : 1.5,
+                ),
+              ),
+              child: selected
+                  ? const Icon(Icons.check, color: Colors.white, size: 22)
+                  : null,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              shade.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

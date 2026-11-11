@@ -11,8 +11,7 @@ import '../search_provider.dart';
 import '../widgets/highlight_text.dart';
 import '../widgets/offline_notice.dart';
 import '../widgets/post_card.dart';
-import '../widgets/post_detail_screen.dart';
-import '../widgets/post_media.dart';
+import '../widgets/post_wall_tile.dart';
 import 'profile_screen.dart';
 import '../cached_image.dart';
 
@@ -130,7 +129,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           mainAxisSpacing: 8,
           crossAxisSpacing: 8,
           itemCount: posts.length,
-          itemBuilder: (context, i) => _ExploreTile(post: posts[i]),
+          itemBuilder: (context, i) => PostWallTile(post: posts[i]),
         ),
       );
     }
@@ -226,90 +225,6 @@ class _UserTile extends StatelessWidget {
       ),
       subtitle: HighlightText('@${user.username}', query: query),
       onTap: () => openProfile(context, user.id),
-    );
-  }
-}
-
-const _ratios = [0.65, 0.8, 1.0, 0.72, 0.9, 1.25, 0.6, 0.85, 1.1];
-
-const _radii = [
-  BorderRadius.only(
-    topLeft: Radius.circular(22),
-    topRight: Radius.circular(22),
-    bottomRight: Radius.circular(22),
-    bottomLeft: Radius.circular(10),
-  ),
-  BorderRadius.only(
-    topLeft: Radius.circular(16),
-    topRight: Radius.circular(24),
-    bottomRight: Radius.circular(12),
-    bottomLeft: Radius.circular(24),
-  ),
-  BorderRadius.only(
-    topLeft: Radius.circular(24),
-    topRight: Radius.circular(14),
-    bottomRight: Radius.circular(24),
-    bottomLeft: Radius.circular(24),
-  ),
-  BorderRadius.only(
-    topLeft: Radius.circular(14),
-    topRight: Radius.circular(24),
-    bottomRight: Radius.circular(20),
-    bottomLeft: Radius.circular(24),
-  ),
-];
-
-double _ratioFor(int id) => _ratios[(id * 31 + id ~/ 7) % _ratios.length];
-
-BorderRadius _radiusFor(int id) => _radii[id % _radii.length];
-
-class _ExploreTile extends StatelessWidget {
-  const _ExploreTile({required this.post});
-
-  final Post post;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasImage = post.imageUrl != null && post.imageUrl!.isNotEmpty;
-    final scheme = Theme.of(context).colorScheme;
-    final caption = post.description.trim();
-
-    return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => PostDetailScreen(post: post)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: _radiusFor(post.id),
-            child: AspectRatio(
-              aspectRatio: _ratioFor(post.id),
-              child: hasImage
-                  ? PostThumb(post: post)
-                  : Container(
-                      color: scheme.surfaceContainerHighest,
-                      padding: const EdgeInsets.all(10),
-                      child: Text(
-                        post.description,
-                        maxLines: 8,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-            ),
-          ),
-          if (hasImage && caption.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(4, 6, 4, 4),
-              child: Text(
-                caption,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-              ),
-            ),
-        ],
-      ),
     );
   }
 }

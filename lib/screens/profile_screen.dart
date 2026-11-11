@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import '../api_client.dart';
 import '../auth_provider.dart';
 import '../friends_provider.dart';
 import '../models.dart';
 import '../moments_provider.dart';
 import '../profile_provider.dart';
+import '../scenes_provider.dart';
 import '../widgets/change_profile_photo_dialog.dart';
 import '../widgets/confirm_dialog.dart';
+import '../widgets/delete_badge.dart';
 import '../widgets/image_viewer.dart';
 import '../widgets/moments_bar.dart';
-import '../widgets/post_detail_screen.dart';
 import '../widgets/post_media.dart';
+import '../widgets/post_wall_tile.dart';
 import 'chat_screen.dart';
 import 'moment_viewer_screen.dart';
 import '../cached_image.dart';
@@ -49,28 +53,38 @@ Future<void> confirmCancelRequest(
   }
 }
 
-class ProfileView extends ConsumerWidget {
+class ProfileView extends ConsumerStatefulWidget {
   const ProfileView({super.key, required this.userId});
   final int userId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileView> createState() => _ProfileViewState();
+}
+
+class _ProfileViewState extends ConsumerState<ProfileView> {
+  int _tab = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final userId = widget.userId;
     final myId = ref.watch(authProvider.select((s) => s.user?.id));
     final isMe = myId == userId;
     final profile = ref.watch(userProfileProvider(userId));
     final posts = ref.watch(userPostsProvider(userId));
+    final scenes = _tab == 1 ? ref.watch(userScenesProvider(userId)) : null;
 
     return RefreshIndicator(
       onRefresh: () async {
         ref.invalidate(userProfileProvider(userId));
         ref.invalidate(userPostsProvider(userId));
+        ref.invalidate(userScenesProvider(userId));
         try {
           await Future.wait([
             ref.read(userProfileProvider(userId).future),
             ref.read(userPostsProvider(userId).future),
+            if (_tab == 1) ref.read(userScenesProvider(userId).future),
           ]);
-        } catch (_) {
-        }
+        } catch (_) {}
       },
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -87,17 +101,19 @@ class ProfileView extends ConsumerWidget {
               data: (user) => _Header(user: user, isMe: isMe),
             ),
           ),
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(
-                child: Text('POSTS',
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              padding: const EdgeInsets.only(top: 12, bottom: 12),
+              child: _ProfileTabs(
+                index: _tab,
+                onChanged: (i) => setState(() => _tab = i),
               ),
             ),
           ),
-          ..._postsSlivers(context, posts, profile.value),
+          if (scenes == null)
+            ..._postsSlivers(context, posts, profile.value)
+          else
+            ..._sceneSlivers(scenes, isMe),
         ],
       ),
     );
@@ -127,21 +143,258 @@ class ProfileView extends ConsumerWidget {
                     child: Center(child: Text('No posts yet.')))),
           ];
         }
+        final width = MediaQuery.of(context).size.width;
         return [
           SliverPadding(
-            padding: const EdgeInsets.all(4),
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+            sliver: SliverMasonryGrid.count(
+              crossAxisCount: width >= 640 ? 3 : 2,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childCount: list.length,
+              itemBuilder: (context, i) =>
+                  PostWallTile(post: list[i], author: author),
+            ),
+          ),
+        ];
+      },
+    );
+  }
+
+  List<Widget> _sceneSlivers(AsyncValue<List<Scene>> scenes, bool isMe) {
+    return scenes.when(
+      loading: () => const [
+        SliverToBoxAdapter(
+            child: Padding(
+                padding: EdgeInsets.all(32),
+                child: Center(child: CircularProgressIndicator()))),
+      ],
+      error: (err, _) => [
+        SliverToBoxAdapter(
+            child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Center(child: Text('Failed to load scenes: $err')))),
+      ],
+      data: (list) {
+        if (list.isEmpty) {
+          return const [
+            SliverToBoxAdapter(
+                child: Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Center(child: Text('No scenes yet.')))),
+          ];
+        }
+        return [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
             sliver: SliverGrid(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
+                crossAxisCount: 3,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+                childAspectRatio: 0.62,
               ),
               delegate: SliverChildBuilderDelegate(
-                (context, i) => _PostTile(post: list[i], author: author),
+                (context, i) => _SceneTile(scene: list[i], isMe: isMe),
                 childCount: list.length,
               ),
             ),
           ),
         ];
       },
+    );
+  }
+}
+
+class _ProfileTabs extends StatelessWidget {
+  const _ProfileTabs({required this.index, required this.onChanged});
+
+  final int index;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    Widget tab(IconData icon, String label, int i) {
+      final on = index == i;
+      final color = on ? scheme.primary : scheme.onSurfaceVariant;
+      return Expanded(
+        child: InkWell(
+          onTap: () => onChanged(i),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: on ? scheme.primary : scheme.outlineVariant,
+                  width: on ? 2.5 : 1,
+                ),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 20, color: color),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight: on ? FontWeight.w700 : FontWeight.w500,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Row(
+      children: [
+        tab(Icons.grid_view_rounded, 'Posts', 0),
+        tab(Icons.play_circle_outline, 'Scenes', 1),
+      ],
+    );
+  }
+}
+
+class _SceneTile extends ConsumerWidget {
+  const _SceneTile({required this.scene, required this.isMe});
+
+  final Scene scene;
+  final bool isMe;
+
+  Future<void> _delete(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await showConfirmDialog(
+      context,
+      title: 'Delete scene',
+      message: 'This scene will be removed.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    );
+    if (!ok) return;
+    try {
+      await api.deleteScene(scene.id);
+      ref.invalidate(userScenesProvider(scene.userId));
+      ref.invalidate(scenesProvider);
+      messenger.showSnackBar(const SnackBar(content: Text('Scene deleted')));
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            e is ApiException ? e.message : 'Could not delete scene: $e',
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => _ScenePreview(scene: scene)),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image(
+              image: cachedImage(
+                scene.thumbnailUrl ?? videoPosterUrl(scene.videoUrl),
+              ),
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) =>
+                  Container(color: scheme.surfaceContainerHighest),
+            ),
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  stops: [0, 0.5],
+                  colors: [Colors.black87, Colors.transparent],
+                ),
+              ),
+            ),
+            Positioned(
+              left: 8,
+              right: 8,
+              bottom: 8,
+              child: Row(
+                children: [
+                  const Icon(Icons.favorite, color: Colors.white, size: 14),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${scene.likesCount}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isMe)
+              Positioned(
+                top: 6,
+                right: 6,
+                child: DeleteBadge(
+                  size: 30,
+                  onTap: () => _delete(context, ref),
+                ),
+              )
+            else
+              const Positioned(
+                top: 6,
+                right: 6,
+                child: Icon(Icons.play_circle_fill,
+                    color: Colors.white, size: 22),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ScenePreview extends StatelessWidget {
+  const _ScenePreview({required this.scene});
+
+  final Scene scene;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        shape: const Border(),
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(child: Center(child: UrlVideo(url: scene.videoUrl))),
+            if (scene.caption.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                child: Text(
+                  scene.caption,
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -242,7 +495,9 @@ class _Header extends ConsumerWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: unseen ? momentRingGradient : null,
-                  color: group != null && !unseen ? Colors.grey.shade400 : null,
+                  color: group != null && !unseen
+                      ? Theme.of(context).colorScheme.outlineVariant
+                      : null,
                 ),
                 child: Container(
                   padding: const EdgeInsets.all(4),
@@ -254,7 +509,8 @@ class _Header extends ConsumerWidget {
                     border: group != null
                         ? null
                         : Border.all(
-                            color: const Color(0xffcbd5e1), width: 2),
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                            width: 2),
                   ),
                   child: CircleAvatar(
                     radius: 56,
@@ -354,49 +610,6 @@ class _GreyButton extends StatelessWidget {
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
       child: Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-    );
-  }
-}
-
-class _PostTile extends StatelessWidget {
-  const _PostTile({required this.post, required this.author});
-  final Post post;
-  final AppUser? author;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasImage = post.imageUrl != null && post.imageUrl!.isNotEmpty;
-    final scheme = Theme.of(context).colorScheme;
-
-    final fullPost = Post(
-      id: post.id,
-      userId: post.userId,
-      description: post.description,
-      imageUrl: post.imageUrl,
-      resourceType: post.resourceType,
-      likes: post.likes,
-      authorName: author?.fullName ?? '',
-      authorProfilePicUrl: author?.profilePicUrl,
-    );
-
-    return Padding(
-      padding: const EdgeInsets.all(4),
-      child: GestureDetector(
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => PostDetailScreen(post: fullPost)),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: hasImage
-              ? PostThumb(post: post)
-              : Container(
-                  color: scheme.surfaceContainerHighest,
-                  padding: const EdgeInsets.all(8),
-                  child: Text(post.description,
-                      maxLines: 5, overflow: TextOverflow.ellipsis),
-                ),
-        ),
-      ),
     );
   }
 }

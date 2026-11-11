@@ -57,11 +57,13 @@ class _RequestsLabel extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
             decoration: BoxDecoration(
-              color: Colors.red,
+              color: Theme.of(context).colorScheme.error,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text('$count',
-                style: const TextStyle(color: Colors.white, fontSize: 11)),
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.onError,
+                    fontSize: 11)),
           ),
         ],
       ],
@@ -130,17 +132,17 @@ class _ChatsTab extends ConsumerWidget {
               padding: const EdgeInsets.all(32),
               children: [
                 const SizedBox(height: 48),
-                const Icon(Icons.chat_bubble_outline,
-                    size: 56, color: Colors.grey),
+                Icon(Icons.chat_bubble_outline,
+                    size: 56, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 const SizedBox(height: 16),
                 const Text('No friends to chat with yet.',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 16)),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                     'Accept a request or follow someone to start chatting.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey)),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 const SizedBox(height: 12),
                 Center(
                   child: TextButton(
@@ -202,11 +204,11 @@ class _RequestsTab extends ConsumerWidget {
           const _Requests(),
           const _SentRequests(),
           if (nothing)
-            const Padding(
-              padding: EdgeInsets.all(48),
+            Padding(
+              padding: const EdgeInsets.all(48),
               child: Center(
                 child: Text('No friend requests right now.',
-                    style: TextStyle(color: Colors.grey)),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
               ),
             ),
         ],
@@ -236,8 +238,7 @@ class _Requests extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Text('Friend requests (${list.length})',
-                  style:
-                      const TextStyle(color: Color(0xff64748b), fontSize: 15)),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 15)),
             ),
             for (final u in list) _RequestTile(key: ValueKey(u.id), user: u),
             const Divider(height: 24),
@@ -291,7 +292,7 @@ class _RequestTileState extends ConsumerState<_RequestTile> {
                 IconButton(
                   tooltip: 'Accept',
                   icon: const Icon(Icons.check_circle_outline),
-                  color: Colors.green,
+                  color: Theme.of(context).colorScheme.primary,
                   onPressed: () => _run(
                       () => notifier.acceptRequest(user.id),
                       'Could not accept'),
@@ -299,7 +300,7 @@ class _RequestTileState extends ConsumerState<_RequestTile> {
                 IconButton(
                   tooltip: 'Reject',
                   icon: const Icon(Icons.cancel_outlined),
-                  color: Colors.red,
+                  color: Theme.of(context).colorScheme.error,
                   onPressed: () => _run(
                       () => notifier.rejectRequest(user.id),
                       'Could not reject'),
@@ -324,7 +325,7 @@ class _SentRequests extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Text('Requests you sent (${pending.length})',
-              style: const TextStyle(color: Color(0xff64748b), fontSize: 15)),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 15)),
         ),
         for (final id in pending) _SentTile(key: ValueKey(id), userId: id),
       ],
@@ -349,9 +350,9 @@ class _SentTile extends ConsumerWidget {
           ? null
           : TextButton(
               onPressed: () => confirmCancelRequest(context, ref, user),
-              child: const Text('Cancel',
+              child: Text('Cancel',
                   style: TextStyle(
-                      color: Colors.red, fontWeight: FontWeight.w600)),
+                      color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.w600)),
             ),
     );
   }
@@ -450,10 +451,10 @@ class _Suggestions extends ConsumerWidget {
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text('Suggested for you',
-                style: TextStyle(color: Color(0xff64748b), fontSize: 15)),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 15)),
           ),
           suggestions.when(
             loading: () => const Padding(
@@ -530,17 +531,17 @@ class _PersonTile extends ConsumerWidget {
       trailing: isMe || status == null
           ? null
           : switch (status) {
-              FriendStatus.friends => const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
+              FriendStatus.friends => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Text('Friends',
                       style: TextStyle(
-                          color: Colors.grey, fontWeight: FontWeight.w500)),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500)),
                 ),
               FriendStatus.requested => TextButton(
                   onPressed: () => confirmCancelRequest(context, ref, user),
-                  child: const Text('Requested',
+                  child: Text('Requested',
                       style: TextStyle(
-                          color: Colors.grey, fontWeight: FontWeight.w500)),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500)),
                 ),
               FriendStatus.incoming => TextButton(
                   onPressed: () async {
@@ -555,9 +556,10 @@ class _PersonTile extends ConsumerWidget {
                       );
                     }
                   },
-                  child: const Text('Accept',
+                  child: Text('Accept',
                       style: TextStyle(
-                          color: Colors.green, fontWeight: FontWeight.w600)),
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w600)),
                 ),
               FriendStatus.none => TextButton(
                   onPressed: () async {

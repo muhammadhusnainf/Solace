@@ -217,7 +217,7 @@ class _CreateJourneyDialogState extends ConsumerState<CreateJourneyDialog> {
                         Padding(
                           padding: const EdgeInsets.only(top: 12),
                           child: Text(_error!,
-                              style: const TextStyle(color: Colors.red)),
+                              style: TextStyle(color: Theme.of(context).colorScheme.error)),
                         ),
                       const SizedBox(height: 16),
                       FilledButton(

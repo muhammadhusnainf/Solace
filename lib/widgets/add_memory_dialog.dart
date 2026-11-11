@@ -217,7 +217,7 @@ class _AddMemoryDialogState extends ConsumerState<AddMemoryDialog> {
                       Padding(
                         padding: const EdgeInsets.only(top: 12),
                         child: Text(_error!,
-                            style: const TextStyle(color: Colors.red)),
+                            style: TextStyle(color: Theme.of(context).colorScheme.error)),
                       ),
                     if (_submitting && _media.isNotEmpty)
                       const Padding(

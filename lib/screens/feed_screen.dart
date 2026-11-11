@@ -45,20 +45,20 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final soft =
-        softGradient(ref.watch(accentProvider), Theme.of(context).brightness);
+    final accent = ref.watch(accentProvider);
+    final brightness = Theme.of(context).brightness;
+    final soft = softGradient(accent, brightness);
+    final bold = boldGradient(accent, brightness, ref.watch(darkShadeProvider));
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: _selectedIndex == 2
           ? null
           : AppBar(
-              backgroundColor: soft == null ? null : Colors.transparent,
-              scrolledUnderElevation: soft == null ? null : 0,
-              flexibleSpace: soft == null
+              backgroundColor: bold == null ? null : Colors.transparent,
+              flexibleSpace: bold == null
                   ? null
-                  : DecoratedBox(decoration: BoxDecoration(gradient: soft)),
+                  : DecoratedBox(decoration: BoxDecoration(gradient: bold)),
               leading: PopupMenuButton<String>(
                 offset: const Offset(0, 20),
                 icon: const Icon(Icons.add_box_outlined, size: 30),
@@ -99,13 +99,13 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                       height: 40,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: scheme.surfaceContainerHighest,
+                        color: Colors.white.withValues(alpha: 0.22),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         "Logout",
                         style: TextStyle(
-                          color: scheme.onSurface,
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -123,9 +123,8 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
           FocusScope.of(context).unfocus();
           setState(() => _selectedIndex = index);
         },
-        backgroundColor: soft == null ? scheme.surface : Colors.transparent,
+        backgroundColor: soft == null ? null : Colors.transparent,
         elevation: soft == null ? null : 0,
-        indicatorColor: scheme.primaryContainer,
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.explore), label: 'Discover'),

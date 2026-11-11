@@ -134,7 +134,7 @@ class PostCard extends ConsumerWidget {
                 commentCount == 1
                     ? 'View 1 comment'
                     : 'View all $commentCount comments',
-                style: TextStyle(color: Colors.grey.shade600),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             ),
           ),
@@ -184,7 +184,7 @@ class _AddCommentPrompt extends ConsumerWidget {
             const SizedBox(width: 10),
             Text(
               'Add a comment...',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14),
             ),
           ],
         ),

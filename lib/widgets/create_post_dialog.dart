@@ -44,35 +44,20 @@ class _CreatePostDialogState extends ConsumerState<CreatePostDialog> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    final file = await _picker.pickImage(source: ImageSource.gallery);
+  Future<void> _pickMedia() async {
+    final file = await _picker.pickMedia();
     if (file == null) return;
     final bytes = await file.readAsBytes();
     if (!mounted) return;
+    final mime = file.mimeType ?? _mimeFromName(file.name);
     setState(() {
       _imageBytes = bytes;
       _imageName = file.name;
-      _imageMime = file.mimeType ?? _mimeFromName(file.name);
-      _isVideo = false;
+      _imageMime = mime;
+      _isVideo = mime.startsWith('video/');
       _error = null;
     });
   }
-
-  Future<void> _pickVideo() async {
-    final file = await _picker.pickVideo(source: ImageSource.gallery);
-    if (file == null) return;
-    final bytes = await file.readAsBytes();
-    if (!mounted) return;
-    setState(() {
-      _imageBytes = bytes;
-      _imageName = file.name;
-      _imageMime = file.mimeType ?? _mimeFromName(file.name);
-      _isVideo = true;
-      _error = null;
-    });
-  }
-
-  void _change() => _isVideo ? _pickVideo() : _pickImage();
 
   String _mimeFromName(String name) {
     final n = name.toLowerCase();
@@ -184,15 +169,9 @@ class _CreatePostDialogState extends ConsumerState<CreatePostDialog> {
               style: TextStyle(fontSize: 18)),
           const SizedBox(height: 20),
           FilledButton(
-            onPressed: _pickImage,
+            onPressed: _pickMedia,
             style: _blueButton,
-            child: const Text('Select photo'),
-          ),
-          const SizedBox(height: 10),
-          FilledButton(
-            onPressed: _pickVideo,
-            style: _blueButton,
-            child: const Text('Select video'),
+            child: const Text('Select photo or video'),
           ),
         ],
       ),
@@ -218,7 +197,7 @@ class _CreatePostDialogState extends ConsumerState<CreatePostDialog> {
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
-                onPressed: _submitting ? null : _change,
+                onPressed: _submitting ? null : _pickMedia,
                 child: Text(_isVideo ? 'Change video' : 'Change photo'),
               ),
             ),
@@ -239,7 +218,7 @@ class _CreatePostDialogState extends ConsumerState<CreatePostDialog> {
           if (_error != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: Text(_error!, style: const TextStyle(color: Colors.red)),
+              child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ),
           if (_submitting && _isVideo)
             const Padding(

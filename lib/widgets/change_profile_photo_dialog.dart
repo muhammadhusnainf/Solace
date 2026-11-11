@@ -123,13 +123,28 @@ class _ChangeProfilePhotoDialogState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 20),
-                child: Text('Change Profile Photo',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    const Text('Change profile photo',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    Positioned(
+                      right: 4,
+                      top: 0,
+                      bottom: 0,
+                      child: IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed:
+                            _uploading ? null : () => Navigator.pop(context),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const Divider(height: 1),
+              const Divider(height: 1, thickness: 2),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Column(
@@ -158,11 +173,12 @@ class _ChangeProfilePhotoDialogState
                                 borderRadius: BorderRadius.circular(4)),
                           ),
                           child: _uploading
-                              ? const SizedBox(
+                              ? SizedBox(
                                   height: 18,
                                   width: 18,
                                   child: CircularProgressIndicator(
-                                      strokeWidth: 2, color: Colors.white))
+                                      strokeWidth: 2,
+                                      color: scheme.onPrimary))
                               : Text(_bytes == null
                                   ? 'Choose Photo'
                                   : 'Change Photo'),
@@ -185,18 +201,6 @@ class _ChangeProfilePhotoDialogState
                             style: TextStyle(color: scheme.error)),
                       ),
                   ],
-                ),
-              ),
-              const Divider(height: 1),
-              InkWell(
-                onTap: _uploading ? null : () => Navigator.pop(context),
-                child: const SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: Center(
-                    child: Text('Cancel',
-                        style: TextStyle(color: Colors.red, fontSize: 15)),
-                  ),
                 ),
               ),
             ],

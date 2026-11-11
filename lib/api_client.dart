@@ -190,7 +190,7 @@ class ApiClient {
   Future<List<Post>> getFeed() async {
     final res = await dio.get('/api/posts');
     _check(res, fallback: 'Could not load feed');
-    return (res.data as List).map((e) => Post.fromJson(e)).toList();
+    return _postsIn(res.data);
   }
 
   Future<List<Moment>> getMoments() async {
@@ -220,6 +220,27 @@ class ApiClient {
     });
     final res = await dio.post('/api/moments', data: form);
     _check(res, fallback: 'Could not share moment');
+  }
+
+  List<dynamic> _listIn(dynamic data, List<String> keys) {
+    if (data is List) return data;
+    if (data is Map) {
+      for (final k in keys) {
+        final v = data[k];
+        if (v is List) return v;
+      }
+      for (final v in data.values) {
+        if (v is List) return v;
+      }
+    }
+    return const [];
+  }
+
+  List<Post> _postsIn(dynamic data) {
+    return _listIn(data, ['posts'])
+        .whereType<Map>()
+        .map((e) => Post.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
   }
 
   MultipartFile _filePart(PickedMedia m) => MultipartFile.fromBytes(
@@ -390,6 +411,56 @@ class ApiClient {
     _check(res, fallback: 'Could not save memory');
   }
 
+  Future<void> deleteEntry({
+    required int journeyId,
+    required int entryId,
+  }) async {
+    final res = await dio.delete('/api/journeys/$journeyId/entries/$entryId');
+    _check(res, fallback: 'Could not delete memory');
+  }
+
+  Future<void> deleteEntryMedia({
+    required int journeyId,
+    required int entryId,
+    required int mediaId,
+  }) async {
+    final res = await dio.delete(
+      '/api/journeys/$journeyId/entries/$entryId/media/$mediaId',
+    );
+    _check(res, fallback: 'Could not remove media');
+  }
+
+  Future<void> deleteScene(int sceneId) async {
+    final res = await dio.delete('/api/scenes/$sceneId');
+    _check(res, fallback: 'Could not delete scene');
+  }
+
+  Future<List<Scene>> getUserScenes(int userId) async {
+    const pageSize = 20;
+    final seen = <int>{};
+    final mine = <Scene>[];
+    var offset = 0;
+
+    for (var page = 0; page < 30; page++) {
+      final res = await dio.get(
+        '/api/scenes',
+        queryParameters: {'limit': pageSize, 'offset': offset, 'user_id': userId},
+      );
+      _check(res, fallback: 'Could not load scenes');
+      final batch = _listFrom(res, 'scenes', Scene.fromJson);
+      var fresh = 0;
+      for (final s in batch) {
+        if (seen.add(s.id)) {
+          fresh++;
+          if (s.userId == userId) mine.add(s);
+        }
+      }
+      if (fresh == 0) break;
+      offset += batch.length;
+    }
+    return mine;
+  }
+
   Future<void> addEntryMedia({
     required int journeyId,
     required int entryId,
@@ -412,15 +483,16 @@ class ApiClient {
   Future<Post> getPost(int postId) async {
     final res = await dio.get('/api/posts/$postId');
     _check(res, fallback: 'Could not load post');
-    return Post.fromJson(res.data);
+    final data = res.data;
+    final raw = data is Map && data['post'] is Map ? data['post'] : data;
+    return Post.fromJson(Map<String, dynamic>.from(raw as Map));
   }
 
   Future<List<Post>> getUserPosts(int userId) async {
     final res = await dio.get('/api/userposts/$userId');
     if (res.statusCode == 404) return [];
     _check(res, fallback: 'Could not load posts');
-    if (res.data is! List) return [];
-    return (res.data as List).map((e) => Post.fromJson(e)).toList();
+    return _postsIn(res.data);
   }
 
   Future<void> deletePost(int postId) async {
@@ -441,8 +513,8 @@ class ApiClient {
   Future<Set<int>> getLikedPostIds(int userId) async {
     final res = await dio.get('/api/liked_posts/$userId');
     _check(res, fallback: 'Could not load liked posts');
-    return (res.data as List)
-        .map((e) => Post.asInt((e as Map)['id']))
+    return _listIn(res.data, ['posts', 'liked_posts', 'likedPosts', 'ids'])
+        .map((e) => Post.asInt(e is Map ? e['id'] : e))
         .toSet();
   }
 
@@ -543,8 +615,8 @@ class ApiClient {
   }
 
   List<AppUser> _usersFrom(Response res) {
-    if (res.statusCode == 404 || res.data is! List) return [];
-    return (res.data as List)
+    if (res.statusCode == 404) return [];
+    return _listIn(res.data, ['users', 'friends', 'requests'])
         .whereType<Map>()
         .map((e) => AppUser.fromJson(Map<String, dynamic>.from(e)))
         .toList();

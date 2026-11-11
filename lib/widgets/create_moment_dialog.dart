@@ -186,7 +186,7 @@ class _CreateMomentDialogState extends ConsumerState<CreateMomentDialog> {
           if (_error != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: Text(_error!, style: const TextStyle(color: Colors.red)),
+              child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ),
           FilledButton(
             onPressed: _submitting ? null : _submit,
